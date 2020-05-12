@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/sdetweil/SampleModule.git"
+    "url": "git+https://github.com/sdetweil/metalcharts.git"
   },
   "author": "perlchamp@gmx.net",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/sdetweil/SampleModule/issues"
+    "url": "https://github.com/sdetweil/metalcharts/issues"
   },
-  "homepage": "https://github.com/sdetweil/SampleModule#readme",
+  "homepage": "https://github.com/sdetweil/metalcharts#readme",
   "dependencies": {
     "chart.js": "^2.5.0",
     "sqlite3": "^4.2.0"
