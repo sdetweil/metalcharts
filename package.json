@@ -1,0 +1,24 @@
+{
+  "name": "metalcharts",
+  "version": "1.0.0",
+  "description": "charting commodity prices",
+  "main": "metalcharts.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "~/MagicMirror/node_modules/.bin/electron-rebuild"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sdetweil/SampleModule.git"
+  },
+  "author": "perlchamp@gmx.net",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sdetweil/SampleModule/issues"
+  },
+  "homepage": "https://github.com/sdetweil/SampleModule#readme",
+  "dependencies": {
+    "chart.js": "^2.5.0",
+    "sqlite3": "^4.2.0"
+  }
+}
