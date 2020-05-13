@@ -18,7 +18,7 @@
   },
   "homepage": "https://github.com/sdetweil/metalcharts#readme",
   "dependencies": {
-    "chart.js": "^2.5.0",
+    "chart.js": "^2.9.3",
     "sqlite3": "^4.2.0"
   }
 }

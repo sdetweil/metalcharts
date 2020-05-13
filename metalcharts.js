@@ -14,6 +14,8 @@ Module.register("metalcharts", {
     ticklabel:[],
     charts:null,
     wrapper:null,
+    min_gold_price:100000000,
+    max_gold_price:0,
 	// anything here in defaults will be added to the config data
 	// and replaced if the same thing is provided in config
 	defaults: {
@@ -22,11 +24,10 @@ Module.register("metalcharts", {
 		metals:[],
 		line_colors:{gold:'white',palladium:'red'},
 		chart_title:"title",
-		xAxisLabel:"xaxis",
+		xAxisLabel:"xaXis",
 		yAxisLabel:"dollars",
 		ranges: {min:500.0,max:2000.0, stepSize:200.0},
-		defer:false,
-		backgroundColor:'black',
+
 		height: 400,
 		width: 400,
 		//defaultFontSize:12,
@@ -43,6 +44,8 @@ Module.register("metalcharts", {
 		datafile:"edelmetallpreise.csv",
 		database:"edelmetallpreise.db",
 		limit:180,	
+    defer:true,
+    month_names:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 	},
 
 	init: function(){
@@ -151,41 +154,33 @@ Module.register("metalcharts", {
 
 	// this is the major worker of the module, it provides the displayable content for this module
 	getDom: function() {
-		var self = this
-		if(self.wrapper==null)
-			self.wrapper = document.createElement("div");
+		var self = this   
+		//if(wrapper==null)
+			wrapper = document.createElement("div");
 		if(this.chartdata==null){
-			// if user supplied message text in its module config, use it
-			if(this.config.hasOwnProperty("message")){
-				// using text from module config block in config.js
-				self.wrapper.innerHTML = this.config.message;
-			}
-			else{
-			// use hard coded text
-				self.wrapper.innerHTML = "Hello world!";
-			}
+				wrapper.innerHTML = self.name +" loading";
 		}
 		else {
-			self.wrapper.innerHTML=null
-        	self.wrapper.style.maxWidth = self.config.width+"px";
-        	self.wrapper.style.maxHeight = self.config.height+"px";
-        	self.wrapper.style.width = self.config.width + "px";
-        	self.wrapper.style.height = parseInt(self.config.height)  + "px";  			
+			wrapper.innerHTML=null
+        	wrapper.style.maxWidth = self.config.width+"px";
+        	wrapper.style.maxHeight = self.config.height+"px";
+        	wrapper.style.width = self.config.width + "px";
+        	wrapper.style.height = parseInt(self.config.height)  + "px";  			
 			var d=document.createElement('div')
             d.style.width = (self.config.width -10) + "px";
             d.style.height = self.config.height + "px";    
             d.style.maxWidth = (self.config.width -10) + "px";
             d.style.maxHeight = self.config.height + "px"; 			
 			var canvas=document.createElement('canvas')
-			d.appendChild(canvas)
-            canvas.id = "mymetals_" +self.ourID ;
+            canvas.id = "mymetals_" +self.identifier ;
             canvas.style.width = (self.config.width -10) + "px";
             canvas.style.height = self.config.height + "px";    
             canvas.style.maxWidth = (self.config.width -10) + "px";
             canvas.style.maxHeight = self.config.height + "px";             
             canvas.style.resize='none'
             canvas.style.overflow='hidden'
-            canvas.style.backgroundColor=self.config.backgroundColor;			
+            canvas.style.backgroundColor=self.config.backgroundColor;	
+        d.appendChild(canvas)
 			var __$ds=[]
 			//wrapper.innerHTML = "have data";
 			for(var metal of self.config.metals){
@@ -201,15 +196,17 @@ Module.register("metalcharts", {
 					       backgroundColor: self.config.line_colors[metal],
 					       label: metal,
 					       showInLegend: true,         
-					       borderWidth: 1,           
+					       borderWidth: 2,           
 					})
 					// set the start tick label
+          // make a x axes tick label for start/end and each month day 1
 					self.ticklabel=[]
 					self.ticklabel.push(self.chartdata[metal][0].x)
 					var m=moment(moment(self.chartdata[metal][0].x,"YYYY-MM-DD").endOf('month')+1,'unix')
 
-					for(var count=self.chartdata[metal].length/30; count>1; count--){
+					for(var count=self.chartdata[metal].length/30; count>0; count--){
 						self.ticklabel.push(m.format("YYYY-MM-DD"))
+            //self.ticklabel.push(m.format('MMM'))
 						m=m.add(1,'month')
 					}
 					// get the date of the last day of data
@@ -218,19 +215,44 @@ Module.register("metalcharts", {
 					if((m=moment(self.chartdata[metal][idx].x,"YYYY-MM-DD")).format('D')!='1')
 					{
 						// add one more tick label entry
-						self.ticklabel.push(m.format("YYYY-MM-DD"))
+						//self.ticklabel.push(m.format("YYYY-MM-DD"))
+
 					}
+          self.min_gold_price=100000000, self.max_gold_price=0; 
+          for(var data_point of self.chartdata[metal]){
+              self.min_gold_price= Math.min(data_point.y,self.min_gold_price)
+              self.max_gold_price= Math.max(data_point.y,self.max_gold_price)
+          }
 				}  
 			}		
-			var info = { self:self, canvas:canvas, data:__$ds}
-			self.wrapper.appendChild(d)
-			info.self.drawChart(info.self,info)
+			//var info = { self:self, ourID:self.oucanvas:canvas, data:__$ds}
+			wrapper.appendChild(d)
+			//info.self.drawChart(info.self,info)
+
+      var info = { self:self, ourID:"mymetals_" +self.identifier , data:__$ds, canvas:canvas}
+      if(!self.config.defer){
+             info.self.drawChart(info.self,info)
+      }
+      else{      
+        if(this.config.debug)
+          Log.log("will execute defered drawing id="+this.ourID)        
+        setTimeout(()=> {
+          info.self.offlineTimer(info)
+          }, 
+          250)
+      }      
 		}
 
-
 		// pass the created content back to MM to add to DOM.
-		return self.wrapper;
+		return wrapper;
 	},
+  offlineTimer: (info)=>{
+      if ((canvas = document.getElementById(info.ourID )) != null ) {
+       info.self.drawChart(info.self,info)
+      }
+      else
+        setTimeout(()=> {info.self.offlineTimer(info)}, 250)
+  },  
 
   drawChart: (self, info) =>{
 
@@ -272,21 +294,26 @@ Module.register("metalcharts", {
                       labelString: self.config.xAxisLabel,
                     }, 
                     gridLines: {
-                      display: false,
-                      zeroLineColor: '#ffcc33'
+                      display: true,
+                      zeroLineColor: 'white', // '#ffcc33'
+                      color: 'grey',
+                      drawBorder: true, 
+                      drawOnChartArea: false,
                     },
                     time: {
-                      unit: 'day',
-                      parser: 'YYYY-MM-DD'
+                      unit: 'month',
+                      //parser: 'YYYY-MM' //'YYYY-MM-DD'
+                      displayFormats: {
+                        month: 'MMM'
+                      },                      
                     },
                     ticks: {
                       display: true,
-                      maxRotation:90,
-                      minRotation:90,
+                      maxRotation:0,
+                      minRotation:0,
                       source: 'labels',
-                      maxTicksLimit: (self.ticklabel.length*2)+3, //10, //self.our_data[this_country].length,
+                      maxTicksLimit: self.ticklabel.length, //10, //self.our_data[this_country].length,
                       autoSkip: true, 
-                      //fontSize: 8
                     },
                   }
                 ],
@@ -298,22 +325,26 @@ Module.register("metalcharts", {
                       labelString: self.config.yAxisLabel,
                     },
                     gridLines: {
-                      display: false,
+                      display: true,
+                      zeroLineColor: 'white', // '#ffcc33'   
+                      color: 'grey',
+                      drawBorder: true, 
+                      drawOnChartArea: false,
                     },
 
                     ticks: {
-                      beginAtZero: true,
-                      source: 'data',
-                      min: self.config.ranges.min,
-                      suggestedMax: self.config.ranges.max,
-                      stepSize: self.config.ranges.stepSize,
- 					  precision: 0,
- 					  //fontSize: 8
+                      //beginAtZero: true,
+                      source: 'auto',
+                      min: self.min_gold_price-150, // self.config.ranges.min,
+                      suggestedMax: self.max_gold_price+50, //   self.config.ranges.max,
+                      stepSize: 50, //self.config.ranges.stepSize,
+ 				           	  precision: 0,
                     },
                   },
                 ]
               },
             }
+        // add the font info before draw
         self.updateOptions(self.config, chartOptions)
                 // create it now
     
